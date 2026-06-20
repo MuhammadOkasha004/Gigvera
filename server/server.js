@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const mongoose = require('mongoose');
 require('express-async-errors');
 require('dotenv').config();
 
@@ -32,11 +33,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- CRITICAL VERCEL FIX: Root Endpoint ---
+// --- CRITICAL VERCEL FIX: Root Endpoint with DB Status Check ---
 app.get('/', (req, res) => {
+  // mongoose.connection.readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  const dbStatus = mongoose.connection.readyState === 1 ? "Connected and Running" : "Disconnected/Error";
+
   res.status(200).json({
     status: 'success',
     message: 'GigVera Backend is Live and Running Successfully!',
+    database: dbStatus,
     builtBy: 'Muhammad Okasha'
   });
 });
@@ -52,7 +57,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'GIGVERA API is running' });
+  const dbStatus = mongoose.connection.readyState === 1 ? "ok" : "error";
+  res.json({ 
+    status: 'ok', 
+    message: 'GIGVERA API is running',
+    database: dbStatus 
+  });
 });
 
 app.use(errorHandler);
