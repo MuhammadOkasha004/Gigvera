@@ -32,6 +32,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// --- CRITICAL VERCEL FIX: Root Endpoint ---
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'GigVera Backend is Live and Running Successfully!',
+    builtBy: 'Muhammad Okasha'
+  });
+});
+
+// --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/services', serviceRoutes);
