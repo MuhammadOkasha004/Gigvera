@@ -21,8 +21,6 @@ const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 
-connectDB();
-
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(cors({
@@ -33,20 +31,34 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- CRITICAL VERCEL FIX: Root Endpoint with DB Status Check ---
-app.get('/', (req, res) => {
-  // mongoose.connection.readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-  const dbStatus = mongoose.connection.readyState === 1 ? "Connected and Running" : "Disconnected/Error";
+app.get('/', async (req, res) => {
+  try {
+    await connectDB(); 
+    
+    const states = {
+      0: "Disconnected",
+      1: "Connected and Running",
+      2: "Connecting...",
+      3: "Disconnecting..."
+    };
+    
+    const dbStatus = states[mongoose.connection.readyState] || "Unknown State";
 
-  res.status(200).json({
-    status: 'success',
-    message: 'GigVera Backend is Live and Running Successfully!',
-    database: dbStatus,
-    builtBy: 'Muhammad Okasha'
-  });
+    res.status(200).json({
+      status: 'success',
+      message: 'GigVera Backend is Live and Running Successfully!',
+      database: dbStatus,
+      builtBy: 'Muhammad Okasha'
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Backend is running but MongoDB failed to connect',
+      error: err.message
+    });
+  }
 });
 
-// --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/services', serviceRoutes);
@@ -56,13 +68,18 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', orderRoutes);
 
-app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? "ok" : "error";
-  res.json({ 
-    status: 'ok', 
-    message: 'GIGVERA API is running',
-    database: dbStatus 
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    const dbStatus = mongoose.connection.readyState === 1 ? "ok" : "error";
+    res.json({ 
+      status: 'ok', 
+      message: 'GIGVERA API is running',
+      database: dbStatus 
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', database: 'error' });
+  }
 });
 
 app.use(errorHandler);
