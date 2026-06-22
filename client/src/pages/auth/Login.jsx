@@ -107,11 +107,7 @@ const Login = () => {
           </span>
         </div>
 
-        <div className="mt-4 p-3 bg-gig-light rounded-lg">
-          <p className="text-xs text-gray-500 font-medium mb-1">Demo Accounts:</p>
-          <p className="text-xs text-gray-600">Provider: provider@gigvera.com / Provider@123</p>
-          <p className="text-xs text-gray-600">Customer: customer@gigvera.com / Customer@123</p>
-        </div>
+
       </form>
     </AuthLayout>
   );
